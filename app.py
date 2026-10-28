@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from datetime import datetime
 
 from flask import Flask, g, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
@@ -126,7 +127,7 @@ def login():
 
     session.clear()
     session["user_id"] = user["id"]
-    return redirect(url_for("landing"))
+    return redirect(url_for("profile"))
 
 
 @app.route("/terms")
@@ -149,9 +150,49 @@ def logout():
     return redirect(url_for("landing"))
 
 
+# SAMPLE DATA — static placeholder, replaced by DB queries in Step 5
+SAMPLE_STATS = {
+    "total_spent": "£5,014.74",
+    "transaction_count": 8,
+    "top_category": "Bills",
+}
+
+SAMPLE_TRANSACTIONS = [
+    {"date": "2026-10-25", "description": "Dinner out", "category": "Food", "amount": "£220.00"},
+    {"date": "2026-10-20", "description": "Miscellaneous", "category": "Other", "amount": "£75.25"},
+    {"date": "2026-10-15", "description": "New headphones", "category": "Shopping", "amount": "£1,299.00"},
+    {"date": "2026-10-12", "description": "Movie night", "category": "Entertainment", "amount": "£399.99"},
+    {"date": "2026-10-05", "description": "Electricity bill", "category": "Bills", "amount": "£1,800.00"},
+]
+
+SAMPLE_CATEGORIES = [
+    {"name": "Bills", "total": "£1,800.00", "percent": 35},
+    {"name": "Shopping", "total": "£1,299.00", "percent": 25},
+    {"name": "Food", "total": "£670.00", "percent": 15},
+    {"name": "Health", "total": "£650.00", "percent": 15},
+    {"name": "Entertainment", "total": "£399.99", "percent": 10},
+]
+
+
+def _format_member_since(created_at):
+    try:
+        return datetime.strptime(created_at[:10], "%Y-%m-%d").strftime("%B %Y")
+    except (TypeError, ValueError):
+        return created_at or "—"
+
+
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    if g.user is None:
+        return redirect(url_for("login"))
+    return render_template(
+        "profile.html",
+        user=g.user,
+        member_since=_format_member_since(g.user["created_at"]),
+        stats=SAMPLE_STATS,
+        transactions=SAMPLE_TRANSACTIONS,
+        categories=SAMPLE_CATEGORIES,
+    )
 
 
 @app.route("/expenses/add")

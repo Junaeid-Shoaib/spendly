@@ -34,7 +34,7 @@ def test_valid_login_redirects_and_sets_session(client, temp_db):
     user_id = _make_user(temp_db)
     response = _post(client)
     assert response.status_code == 302
-    assert response.headers["Location"].endswith("/")
+    assert response.headers["Location"].endswith("/profile")
     assert _session_user_id(client) == user_id
 
 
