@@ -1,22 +1,37 @@
+import os
 import sqlite3
 
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, g, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash
 
 from database.db import (  # noqa: F401
     create_user,
     get_db,
     get_user_by_email,
+    get_user_by_id,
     init_db,
     seed_db,
 )
 
 app = Flask(__name__)
+# The fallback key is for local development only; set SECRET_KEY in production.
+app.secret_key = os.environ.get("SECRET_KEY", "dev-only-insecure-key-change-me")
 
 with app.app_context():
     init_db()
     seed_db()
 
 MIN_PASSWORD_LENGTH = 8
+
+
+@app.before_request
+def load_logged_in_user():
+    g.user = None
+    user_id = session.get("user_id")
+    if user_id is not None:
+        g.user = get_user_by_id(user_id)
+        if g.user is None:
+            session.clear()
 
 
 def _validate_registration(name, email, password, confirm_password):
@@ -55,6 +70,9 @@ def landing():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    if g.user is not None:
+        return redirect(url_for("landing"))
+
     if request.method == "GET":
         return render_template("register.html")
 
@@ -81,12 +99,34 @@ def register():
     return redirect(url_for("login", registered=1))
 
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    success = None
-    if request.args.get("registered") == "1":
-        success = "Account created. Please sign in."
-    return render_template("login.html", success=success)
+    if g.user is not None:
+        return redirect(url_for("landing"))
+
+    if request.method == "GET":
+        success = None
+        if request.args.get("registered") == "1":
+            success = "Account created. Please sign in."
+        return render_template("login.html", success=success)
+
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+
+    if not email or not password:
+        return render_template(
+            "login.html", error="Email and password are required.", email=email
+        ), 400
+
+    user = get_user_by_email(email)
+    if user is None or not check_password_hash(user["password_hash"], password):
+        return render_template(
+            "login.html", error="Invalid email or password.", email=email
+        ), 401
+
+    session.clear()
+    session["user_id"] = user["id"]
+    return redirect(url_for("landing"))
 
 
 @app.route("/terms")
@@ -105,7 +145,8 @@ def privacy():
 
 @app.route("/logout")
 def logout():
-    return "Logout — coming in Step 3"
+    session.clear()
+    return redirect(url_for("landing"))
 
 
 @app.route("/profile")
