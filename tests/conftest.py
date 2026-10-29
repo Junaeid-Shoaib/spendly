@@ -11,6 +11,23 @@ def temp_db(tmp_path, monkeypatch):
 
 
 @pytest.fixture
+def add_expense(temp_db):
+    def _add_expense(user_id, amount, category, date, description=None):
+        conn = temp_db.get_db()
+        try:
+            conn.execute(
+                "INSERT INTO expenses (user_id, amount, category, date, description) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (user_id, amount, category, date, description),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    return _add_expense
+
+
+@pytest.fixture
 def client(temp_db):
     # app.py runs init_db()/seed_db() on import, so import it only after
     # temp_db has redirected DB_PATH away from the real database.

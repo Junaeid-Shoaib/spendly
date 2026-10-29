@@ -91,6 +91,77 @@ def create_user(name, email, password):
         conn.close()
 
 
+def get_recent_expenses(user_id, limit=5):
+    """Return the user's newest expenses as a list of dicts.
+
+    Keys: date (raw ISO str), description (str or None), category, amount (float).
+    Ordered by date DESC, id DESC.
+    """
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            "SELECT date, description, category, amount FROM expenses "
+            "WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT ?",
+            (user_id, limit),
+        ).fetchall()
+    finally:
+        conn.close()
+    return [
+        {
+            "date": row["date"],
+            "description": row["description"],
+            "category": row["category"],
+            "amount": float(row["amount"]),
+        }
+        for row in rows
+    ]
+
+
+def get_expense_stats(user_id):
+    """Return {"total": float, "count": int, "top_category": str or None}.
+
+    top_category is the category with the highest total; ties are broken
+    alphabetically by category name.
+    """
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count "
+            "FROM expenses WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+        top = conn.execute(
+            "SELECT category FROM expenses WHERE user_id = ? "
+            "GROUP BY category ORDER BY SUM(amount) DESC, category ASC LIMIT 1",
+            (user_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+    return {
+        "total": float(row["total"]),
+        "count": row["count"],
+        "top_category": top["category"] if top else None,
+    }
+
+
+def get_category_totals(user_id):
+    """Return [{"name": str, "total": float}], highest total first.
+
+    Ties are broken alphabetically by category name.
+    """
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            "SELECT category, SUM(amount) AS total FROM expenses "
+            "WHERE user_id = ? GROUP BY category "
+            "ORDER BY SUM(amount) DESC, category ASC",
+            (user_id,),
+        ).fetchall()
+        return [{"name": row["category"], "total": float(row["total"])} for row in rows]
+    finally:
+        conn.close()
+
+
 def seed_db():
     conn = get_db()
     try:

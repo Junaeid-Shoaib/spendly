@@ -34,40 +34,56 @@
             </div>
         </div>
 
-        <h2 class="profile-heading">Recent transactions</h2>
-        <div class="table-wrap">
-            <table class="tx-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Description</th>
-                        <th>Category</th>
-                        <th class="tx-amount">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for tx in transactions %}
-                    <tr>
-                        <td>{{ tx.date }}</td>
-                        <td>{{ tx.description }}</td>
-                        <td><span class="badge badge-{{ tx.category|lower }}">{{ tx.category }}</span></td>
-                        <td class="tx-amount">{{ tx.amount }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <div class="profile-columns">
 
-        <h2 class="profile-heading">Spending by category</h2>
-        <ul class="cat-list">
-            {% for cat in categories %}
-            <li class="cat-row">
-                <span class="cat-name">{{ cat.name }}</span>
-                <div class="cat-bar"><div class="cat-bar-fill bar-w-{{ cat.percent }}"></div></div>
-                <span class="cat-total">{{ cat.total }}<span class="cat-percent">{{ cat.percent }}%</span></span>
-            </li>
-            {% endfor %}
-        </ul>
+            <section class="profile-panel">
+                <h2 class="profile-heading">Recent transactions</h2>
+                {% if transactions %}
+                <div class="table-wrap">
+                    <table class="tx-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th class="tx-amount">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in transactions %}
+                            <tr>
+                                <td>{{ tx.date }}</td>
+                                <td>{{ tx.description }}</td>
+                                <td><span class="badge badge-{{ tx.category|lower }}">{{ tx.category }}</span></td>
+                                <td class="tx-amount">{{ tx.amount }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="empty-state">No transactions yet.</p>
+                {% endif %}
+            </section>
+
+            <section class="profile-panel">
+                <h2 class="profile-heading">Spending by category</h2>
+                {% if categories %}
+                <ul class="cat-list">
+                    {% for cat in categories %}
+                    <li class="cat-row">
+                        <span class="cat-name">{{ cat.name }}</span>
+                        <div class="cat-bar"><div class="cat-bar-fill bar-w-{{ cat.bar }}"></div></div>
+                        <span class="cat-total">{{ cat.total }}<span class="cat-percent">{{ cat.percent }}%</span></span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="empty-state">No spending to break down yet.</p>
+                {% endif %}
+            </section>
+
+        </div>
 
     </div>
 </section>

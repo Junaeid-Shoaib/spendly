@@ -39,10 +39,44 @@ def test_profile_renders_when_logged_in(logged_in):
     assert b"Top category" in response.data
 
 
-def test_profile_has_table_rows_and_categories(logged_in):
+def test_profile_has_table_rows_and_categories(logged_in, temp_db, add_expense):
+    user_id = temp_db.get_user_by_email("jane@example.com")["id"]
+    add_expense(user_id, 100.0, "Food", "2026-10-01", "Lunch")
+    add_expense(user_id, 50.0, "Transport", "2026-10-02", "Bus")
+    add_expense(user_id, 200.0, "Bills", "2026-10-03", "Phone")
     html = logged_in.get("/profile").get_data(as_text=True)
     assert html.count("<tr>") >= 4  # header + at least 3 rows
     assert html.count('class="cat-row"') >= 3
+
+
+def test_profile_shows_real_stats(logged_in, temp_db, add_expense):
+    user_id = temp_db.get_user_by_email("jane@example.com")["id"]
+    add_expense(user_id, 1200.0, "Bills", "2026-10-03", "Rent")
+    add_expense(user_id, 34.5, "Food", "2026-10-04", None)
+    html = logged_in.get("/profile").get_data(as_text=True)
+    assert "£1,234.50" in html
+    assert "bar-w-100" not in html  # Bills is ~97%, Food ~3%
+    assert "bar-w-95" in html
+    assert "<td>—</td>" in html  # missing description
+
+
+def test_profile_empty_state_for_new_user(logged_in):
+    response = logged_in.get("/profile")
+    html = response.get_data(as_text=True)
+    assert response.status_code == 200
+    assert "£0.00" in html
+    assert "No transactions yet." in html
+    assert "No spending to break down yet." in html
+    assert 'class="cat-row"' not in html
+    assert "<tr>" not in html
+
+
+def test_profile_hides_other_users_expenses(logged_in, temp_db, add_expense):
+    other_id = temp_db.create_user("Other", "other@example.com", "password123")
+    add_expense(other_id, 999.0, "Shopping", "2026-10-05", "Secret purchase")
+    html = logged_in.get("/profile").get_data(as_text=True)
+    assert "Secret purchase" not in html
+    assert "£999.00" not in html
 
 
 def test_profile_navbar_shows_logged_in_state(logged_in):
