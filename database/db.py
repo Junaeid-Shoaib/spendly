@@ -91,18 +91,36 @@ def create_user(name, email, password):
         conn.close()
 
 
-def get_recent_expenses(user_id, limit=5):
+def _date_clause(start_date, end_date):
+    """Return (sql_fragment, params) bounding expenses.date inclusively.
+
+    The fragment is built only from fixed strings; values go in params.
+    """
+    sql = ""
+    params = []
+    if start_date:
+        sql += " AND date >= ?"
+        params.append(start_date)
+    if end_date:
+        sql += " AND date <= ?"
+        params.append(end_date)
+    return sql, params
+
+
+def get_recent_expenses(user_id, limit=5, start_date=None, end_date=None):
     """Return the user's newest expenses as a list of dicts.
 
     Keys: date (raw ISO str), description (str or None), category, amount (float).
-    Ordered by date DESC, id DESC.
+    Ordered by date DESC, id DESC. start_date/end_date (ISO str) bound the
+    range inclusively; either may be None.
     """
+    clause, extra = _date_clause(start_date, end_date)
     conn = get_db()
     try:
         rows = conn.execute(
             "SELECT date, description, category, amount FROM expenses "
-            "WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT ?",
-            (user_id, limit),
+            "WHERE user_id = ?" + clause + " ORDER BY date DESC, id DESC LIMIT ?",
+            (user_id, *extra, limit),
         ).fetchall()
     finally:
         conn.close()
@@ -117,23 +135,26 @@ def get_recent_expenses(user_id, limit=5):
     ]
 
 
-def get_expense_stats(user_id):
+def get_expense_stats(user_id, start_date=None, end_date=None):
     """Return {"total": float, "count": int, "top_category": str or None}.
 
     top_category is the category with the highest total; ties are broken
-    alphabetically by category name.
+    alphabetically by category name. start_date/end_date (ISO str) bound the
+    range inclusively; either may be None.
     """
+    clause, extra = _date_clause(start_date, end_date)
+    params = (user_id, *extra)
     conn = get_db()
     try:
         row = conn.execute(
             "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count "
-            "FROM expenses WHERE user_id = ?",
-            (user_id,),
+            "FROM expenses WHERE user_id = ?" + clause,
+            params,
         ).fetchone()
         top = conn.execute(
-            "SELECT category FROM expenses WHERE user_id = ? "
-            "GROUP BY category ORDER BY SUM(amount) DESC, category ASC LIMIT 1",
-            (user_id,),
+            "SELECT category FROM expenses WHERE user_id = ?" + clause +
+            " GROUP BY category ORDER BY SUM(amount) DESC, category ASC LIMIT 1",
+            params,
         ).fetchone()
     finally:
         conn.close()
@@ -144,18 +165,20 @@ def get_expense_stats(user_id):
     }
 
 
-def get_category_totals(user_id):
+def get_category_totals(user_id, start_date=None, end_date=None):
     """Return [{"name": str, "total": float}], highest total first.
 
-    Ties are broken alphabetically by category name.
+    Ties are broken alphabetically by category name. start_date/end_date
+    (ISO str) bound the range inclusively; either may be None.
     """
+    clause, extra = _date_clause(start_date, end_date)
     conn = get_db()
     try:
         rows = conn.execute(
             "SELECT category, SUM(amount) AS total FROM expenses "
-            "WHERE user_id = ? GROUP BY category "
+            "WHERE user_id = ?" + clause + " GROUP BY category "
             "ORDER BY SUM(amount) DESC, category ASC",
-            (user_id,),
+            (user_id, *extra),
         ).fetchall()
         return [{"name": row["category"], "total": float(row["total"])} for row in rows]
     finally:
