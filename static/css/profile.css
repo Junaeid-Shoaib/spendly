@@ -347,7 +347,7 @@
 .table-wrap,
 .cat-list,
 .empty-state {
-    background: var(--glass-bg);
+    background: var(--tile-bg);
     -webkit-backdrop-filter: var(--glass-blur);
     backdrop-filter: var(--glass-blur);
     border: 1px solid var(--glass-border);
@@ -361,12 +361,12 @@
 
 .stat-card:hover {
     transform: translateY(-3px);
-    background: var(--glass-hover);
+    background: var(--tile-hover);
     box-shadow: var(--glass-shadow-hover);
 }
 
 .avatar {
-    color: var(--paper);
+    color: #eaddca;
     background: var(--gold-gradient);
     box-shadow: 0 0 0 4px var(--glass-border), var(--glass-shadow);
 }
@@ -381,7 +381,7 @@
 .filter-preset.is-active {
     background: var(--btn-gradient);
     border-color: var(--glass-border);
-    color: var(--ink);
+    color: #013328;
 }
 
 .tx-table thead th { background: var(--glass-bg); }
