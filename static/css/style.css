@@ -3,21 +3,43 @@
 /* ------------------------------------------------------------------ */
 
 :root {
-    --ink: #0f0f0f;
-    --ink-soft: #2d2d2d;
-    --ink-muted: #6b6b6b;
-    --ink-faint: #a0a0a0;
-    --paper: #f7f6f3;
-    --paper-warm: #f0ede6;
-    --paper-card: #ffffff;
-    --accent: #1a472a;
-    --accent-light: #e8f0eb;
-    --accent-2: #c17f24;
-    --accent-2-light: #fdf3e3;
-    --danger: #c0392b;
-    --danger-light: #fdecea;
-    --border: #e4e1da;
-    --border-soft: #eeebe4;
+    /* Black & gold, burgundy buttons: --ink is the light text, --paper the near-black. */
+    --ink: #f6efdc;
+    --ink-soft: #e4d9bd;
+    --ink-muted: #b8ad92;
+    --ink-faint: #8d846c;
+    --paper: #0c0a07;
+    --paper-warm: rgba(255, 255, 255, 0.04);
+    --paper-card: rgba(255, 255, 255, 0.06);
+    --accent: #d4af37;
+    --accent-text: #e6c866;
+    --accent-light: rgba(212, 175, 55, 0.16);
+    --accent-2: #cd7f32;
+    --accent-2-light: rgba(205, 127, 50, 0.18);
+    --danger: #ff8a7a;
+    --danger-light: rgba(255, 107, 91, 0.16);
+    --border: rgba(212, 175, 55, 0.3);
+    --border-soft: rgba(212, 175, 55, 0.14);
+
+    /* Glassmorphism */
+    --glow-gold: rgba(212, 175, 55, 0.18);
+    --glow-gold-soft: rgba(212, 175, 55, 0.1);
+    --bg-base: #050505;
+    --bg-gradient:
+        radial-gradient(circle at 8% 4%, var(--glow-gold) 0, transparent 22%),
+        radial-gradient(circle at 96% 42%, var(--glow-gold-soft) 0, transparent 20%),
+        radial-gradient(circle at 30% 100%, var(--glow-gold-soft) 0, transparent 24%),
+        linear-gradient(160deg, #000000 0%, #090909 60%, #0f0d08 100%);
+    --gold-gradient: linear-gradient(135deg, #f3dc86 0%, #d4af37 50%, #aa8626 100%);
+    --btn-gradient: linear-gradient(135deg, #b32a4b 0%, #82001f 55%, #5e0016 100%);
+    --btn-gradient-hover: linear-gradient(135deg, #c93659 0%, #96122f 55%, #6f0a1f 100%);
+    --glass-bg: rgba(255, 255, 255, 0.06);
+    --glass-bg-strong: rgba(14, 11, 6, 0.72);
+    --glass-hover: rgba(255, 255, 255, 0.11);
+    --glass-border: rgba(212, 175, 55, 0.32);
+    --glass-blur: blur(18px) saturate(140%);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --glass-shadow-hover: 0 14px 44px rgba(0, 0, 0, 0.65), 0 0 24px rgba(212, 175, 55, 0.14);
 
     --font-display: 'DM Serif Display', Georgia, serif;
     --font-body: 'DM Sans', system-ui, sans-serif;
@@ -40,10 +62,12 @@
     padding: 0;
 }
 
-html { font-size: 16px; scroll-behavior: smooth; }
+html { font-size: 16px; scroll-behavior: smooth; color-scheme: dark; }
 
 body {
-    background: var(--paper);
+    background: var(--bg-gradient);
+    background-attachment: fixed;
+    min-height: 100vh;
     color: var(--ink);
     font-family: var(--font-body);
     font-size: 1rem;
@@ -692,6 +716,143 @@ a { color: inherit; text-decoration: none; }
 }
 
 .legal-body a { color: var(--accent); }
+
+/* ------------------------------------------------------------------ */
+/* Glass surfaces                                                      */
+/* ------------------------------------------------------------------ */
+
+.navbar,
+.footer,
+.feature-card,
+.auth-card,
+.legal-inner,
+.mock-window {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+.navbar {
+    border-width: 0 0 1px;
+    background: var(--glass-bg-strong);
+}
+
+.footer {
+    border-width: 1px 0 0;
+    color: var(--ink);
+}
+
+.footer-copy,
+.footer-links a { color: var(--ink-muted); }
+.footer-links a:hover { color: var(--ink); }
+
+.features {
+    background: transparent;
+    border: none;
+}
+
+.feature-card,
+.auth-card {
+    border-radius: var(--radius-lg);
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    background: var(--glass-hover);
+    box-shadow: var(--glass-shadow-hover);
+}
+
+.mock-panel {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+}
+
+.mock-bar-track { background: var(--glass-bg); }
+
+.form-input {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+.form-input:focus {
+    background: var(--glass-bg-strong);
+    box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.btn-ghost {
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+}
+
+.btn-ghost:hover { background: var(--glass-hover); }
+
+/* Burgundy actions */
+
+.btn-primary,
+.btn-submit,
+.hero-btn {
+    background: var(--btn-gradient);
+    color: var(--ink);
+    font-weight: 600;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 18px rgba(128, 0, 32, 0.4);
+}
+
+.btn-primary:hover,
+.btn-submit:hover,
+.hero-btn:hover {
+    background: var(--btn-gradient-hover);
+    color: var(--ink);
+}
+
+.nav-cta {
+    background: var(--btn-gradient) !important;
+    color: var(--ink) !important;
+    font-weight: 600;
+}
+
+.nav-cta:hover { background: var(--btn-gradient-hover) !important; }
+
+.legal-body a,
+.auth-success { color: var(--accent-text); }
+
+.form-input option {
+    background: var(--paper);
+    color: var(--ink);
+}
+
+/* Landing hero: swap the green/blue/purple accents for gold tones */
+
+.hero {
+    --hero-green: #d4af37;
+    --hero-green-light: rgba(212, 175, 55, 0.16);
+    --hero-red: #e0795f;
+    --hero-orange: #e8c872;
+    --hero-blue: #c9a227;
+    --hero-purple: #a8803a;
+}
+
+.hero-badge {
+    border-color: var(--glass-border);
+    color: var(--accent-text);
+}
+
+.auth-error { border-color: var(--danger); }
+
+/* Browsers without backdrop-filter get a more opaque pane so text stays legible. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .navbar,
+    .footer,
+    .feature-card,
+    .auth-card,
+    .legal-inner,
+    .mock-window { background: var(--glass-bg-strong); }
+}
 
 /* ------------------------------------------------------------------ */
 /* Responsive                                                          */

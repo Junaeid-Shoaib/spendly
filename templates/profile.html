@@ -19,6 +19,46 @@
             </div>
         </div>
 
+        <div class="filter-bar">
+            <nav class="filter-presets" aria-label="Quick date ranges">
+                {% for preset in presets %}
+                <a class="filter-preset{% if preset.key == active_preset %} is-active{% endif %}"
+                   href="{{ url_for('profile', start=preset.start, end=preset.end) }}"
+                   {% if preset.key == active_preset %}aria-current="page"{% endif %}>{{ preset.label }}</a>
+                {% endfor %}
+            </nav>
+            <form class="filter-months" method="get" action="{{ url_for('profile') }}">
+                <label class="filter-field">
+                    <span class="filter-label">Period</span>
+                    <select class="form-input" name="months" data-autosubmit>
+                        <option value="">Last…</option>
+                        {% for option in month_options %}
+                        <option value="{{ option.value }}"{% if option.value == active_months %} selected{% endif %}>{{ option.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <noscript><button class="btn-primary" type="submit">Go</button></noscript>
+            </form>
+            <form class="filter-dates" method="get" action="{{ url_for('profile') }}">
+                <label class="filter-field">
+                    <span class="filter-label">From</span>
+                    <input class="form-input" type="date" name="start" value="{{ start or '' }}">
+                </label>
+                <label class="filter-field">
+                    <span class="filter-label">To</span>
+                    <input class="form-input" type="date" name="end" value="{{ end or '' }}">
+                </label>
+                <button class="btn-primary" type="submit">Apply</button>
+                <a class="btn-ghost" href="{{ url_for('profile') }}">Clear</a>
+            </form>
+            {% if error %}
+            <p class="filter-error" role="alert">{{ error }}</p>
+            {% endif %}
+            {% if range_label %}
+            <p class="filter-range">Showing {{ range_label }}</p>
+            {% endif %}
+        </div>
+
         <div class="stats-row">
             <div class="stat-card">
                 <span class="stat-label">Total spent</span>
@@ -62,7 +102,7 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="empty-state">No transactions yet.</p>
+                <p class="empty-state">{% if is_filtered %}No transactions in this period.{% else %}No transactions yet.{% endif %}</p>
                 {% endif %}
             </section>
 
@@ -79,7 +119,7 @@
                     {% endfor %}
                 </ul>
                 {% else %}
-                <p class="empty-state">No spending to break down yet.</p>
+                <p class="empty-state">{% if is_filtered %}No spending in this period.{% else %}No spending to break down yet.{% endif %}</p>
                 {% endif %}
             </section>
 

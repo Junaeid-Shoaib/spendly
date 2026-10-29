@@ -97,7 +97,7 @@ pytest -s
 | `GET/POST /login` | Implemented — renders `login.html` |
 | `GET /logout` | Implemented — clears the session, redirects to `/` |
 | `GET /terms`, `GET /privacy` | Implemented — render `terms.html` / `privacy.html` |
-| `GET /profile` | Implemented — renders `profile.html` with real expense data (stats, recent transactions, category breakdown) |
+| `GET /profile` | Implemented — renders `profile.html` with real expense data (stats, recent transactions, category breakdown); accepts optional `?start=&end=` (YYYY-MM-DD) date filters |
 | `GET /expenses/add` | Stub — Step 7 |
 | `GET /expenses/<id>/edit` | Stub — Step 8 |
 | `GET /expenses/<id>/delete` | Stub — Step 9 |
@@ -113,6 +113,6 @@ pytest -s
 - **Never put DB logic in route functions** — it belongs in `database/db.py`
 - **Never install new packages** mid-feature without flagging it — keep `requirements.txt` in sync
 - **Never use JS frameworks** — the frontend is intentionally vanilla
-- **`database/db.py` helpers** — user helpers plus `get_recent_expenses()`, `get_expense_stats()` and `get_category_totals()`; there are no expense create/update/delete helpers until Steps 7-9
+- **`database/db.py` helpers** — user helpers plus `get_recent_expenses()`, `get_expense_stats()` and `get_category_totals()` (each takes optional `start_date`/`end_date`); there are no expense create/update/delete helpers until Steps 7-9
 - **FK enforcement is manual** — SQLite foreign keys are off by default; `get_db()` must run `PRAGMA foreign_keys = ON` on every connection
 - The app runs on **port 5001**, not the Flask default 5000 — don't change this
