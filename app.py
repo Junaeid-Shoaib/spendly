@@ -7,7 +7,10 @@ from werkzeug.security import check_password_hash
 
 from database.db import (  # noqa: F401
     create_user,
+    get_category_totals,
     get_db,
+    get_expense_stats,
+    get_recent_expenses,
     get_user_by_email,
     get_user_by_id,
     init_db,
@@ -150,30 +153,6 @@ def logout():
     return redirect(url_for("landing"))
 
 
-# SAMPLE DATA — static placeholder, replaced by DB queries in Step 5
-SAMPLE_STATS = {
-    "total_spent": "£5,014.74",
-    "transaction_count": 8,
-    "top_category": "Bills",
-}
-
-SAMPLE_TRANSACTIONS = [
-    {"date": "2026-10-25", "description": "Dinner out", "category": "Food", "amount": "£220.00"},
-    {"date": "2026-10-20", "description": "Miscellaneous", "category": "Other", "amount": "£75.25"},
-    {"date": "2026-10-15", "description": "New headphones", "category": "Shopping", "amount": "£1,299.00"},
-    {"date": "2026-10-12", "description": "Movie night", "category": "Entertainment", "amount": "£399.99"},
-    {"date": "2026-10-05", "description": "Electricity bill", "category": "Bills", "amount": "£1,800.00"},
-]
-
-SAMPLE_CATEGORIES = [
-    {"name": "Bills", "total": "£1,800.00", "percent": 35},
-    {"name": "Shopping", "total": "£1,299.00", "percent": 25},
-    {"name": "Food", "total": "£670.00", "percent": 15},
-    {"name": "Health", "total": "£650.00", "percent": 15},
-    {"name": "Entertainment", "total": "£399.99", "percent": 10},
-]
-
-
 def _format_member_since(created_at):
     try:
         return datetime.strptime(created_at[:10], "%Y-%m-%d").strftime("%B %Y")
@@ -181,17 +160,86 @@ def _format_member_since(created_at):
         return created_at or "—"
 
 
+def _format_currency(amount):
+    return f"£{amount:,.2f}"
+
+
+def _build_transactions(user_id):
+    """Return [{"date", "description", "category", "amount"}] for the template.
+
+    Dates stay as stored (YYYY-MM-DD), amount is a formatted string, and a
+    missing description is shown as an em dash.
+    """
+    return [
+        {
+            "date": expense["date"],
+            "description": (expense["description"] or "").strip() or "—",
+            "category": expense["category"],
+            "amount": _format_currency(expense["amount"]),
+        }
+        for expense in get_recent_expenses(user_id)
+    ]
+
+
+def _build_stats(user_id):
+    """Return {"total_spent": str, "transaction_count": int, "top_category": str}."""
+    stats = get_expense_stats(user_id)
+    return {
+        "total_spent": _format_currency(stats["total"]),
+        "transaction_count": stats["count"],
+        "top_category": stats["top_category"] or "—",
+    }
+
+
+def _build_categories(user_id):
+    """Return [{"name", "total": str, "percent": int, "bar": int}] for the template.
+
+    percent is the true share and sums to 100; bar is percent rounded to the
+    nearest 5, matching the bar-w-N classes in profile.css.
+    """
+    totals = get_category_totals(user_id)
+    grand_total = sum(item["total"] for item in totals)
+    if grand_total <= 0:
+        return []
+
+    # Largest-remainder method so the percents add up to exactly 100.
+    shares = [item["total"] / grand_total * 100 for item in totals]
+    percents = [int(share) for share in shares]
+    leftover = 100 - sum(percents)
+    by_remainder = sorted(
+        range(len(shares)), key=lambda i: (-(shares[i] - percents[i]), i)
+    )
+    for index in by_remainder[:leftover]:
+        percents[index] += 1
+
+    categories = []
+    for item, percent in zip(totals, percents):
+        bar = min(100, int(percent / 5 + 0.5) * 5)
+        if percent > 0:
+            bar = max(bar, 5)
+        categories.append(
+            {
+                "name": item["name"],
+                "total": _format_currency(item["total"]),
+                "percent": percent,
+                "bar": bar,
+            }
+        )
+    return categories
+
+
 @app.route("/profile")
 def profile():
     if g.user is None:
         return redirect(url_for("login"))
+    user_id = g.user["id"]
     return render_template(
         "profile.html",
         user=g.user,
         member_since=_format_member_since(g.user["created_at"]),
-        stats=SAMPLE_STATS,
-        transactions=SAMPLE_TRANSACTIONS,
-        categories=SAMPLE_CATEGORIES,
+        stats=_build_stats(user_id),
+        transactions=_build_transactions(user_id),
+        categories=_build_categories(user_id),
     )
 
 
