@@ -35,6 +35,7 @@
                 </button>
                 {% if g.user %}
                 <a href="{{ url_for('analytics') }}" class="nav-analytics{% if request.endpoint == 'analytics' %} is-active{% endif %}"{% if request.endpoint == 'analytics' %} aria-current="page"{% endif %}>Analytics</a>
+                <a href="{{ url_for('add_expense') }}" class="nav-analytics{% if request.endpoint == 'add_expense' %} is-active{% endif %}"{% if request.endpoint == 'add_expense' %} aria-current="page"{% endif %}>Add expense</a>
                 <a href="{{ url_for('profile') }}" class="nav-user">{{ g.user['name'] }}</a>
                 <a href="{{ url_for('logout') }}" class="nav-cta">Sign out</a>
                 {% else %}

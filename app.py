@@ -2,11 +2,14 @@ import calendar
 import os
 import sqlite3
 from datetime import date, datetime, timedelta
+from decimal import Decimal, InvalidOperation
 
 from flask import Flask, g, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
 from database.db import (  # noqa: F401
+    CATEGORIES,
+    create_expense,
     create_user,
     get_category_totals,
     get_db,
@@ -27,6 +30,8 @@ with app.app_context():
     seed_db()
 
 MIN_PASSWORD_LENGTH = 8
+MAX_EXPENSE_AMOUNT = Decimal("1000000")
+MAX_DESCRIPTION_LENGTH = 200
 
 
 @app.before_request
@@ -370,9 +375,94 @@ def analytics():
     return render_template("analytics.html")
 
 
-@app.route("/expenses/add")
+def _validate_expense(form, today=None):
+    """Return (error, cleaned) for an add-expense form.
+
+    cleaned is None when error is set; otherwise it holds the parsed amount
+    (Decimal), category, ISO date string and description (str or None).
+    """
+    today = today or date.today()
+
+    raw_amount = form.get("amount", "").strip()
+    if not raw_amount:
+        return "Amount is required.", None
+    try:
+        amount = Decimal(raw_amount)
+        if not amount.is_finite():
+            return "Amount must be a number.", None
+        if amount <= 0:
+            return "Amount must be greater than 0.", None
+        if amount > MAX_EXPENSE_AMOUNT:
+            return "Amount is too large.", None
+        if amount != amount.quantize(Decimal("0.01")):
+            return "Amount can have at most 2 decimal places.", None
+    except InvalidOperation:
+        return "Amount must be a number.", None
+
+    category = form.get("category", "")
+    if category not in CATEGORIES:
+        return "Please choose a valid category.", None
+
+    raw_date = form.get("date", "").strip()
+    if not raw_date:
+        return "Date is required.", None
+    try:
+        expense_date = datetime.strptime(raw_date, "%Y-%m-%d").date()
+    except ValueError:
+        return "Enter a valid date.", None
+    if expense_date > today:
+        return "Date cannot be in the future.", None
+
+    description = form.get("description", "").strip()
+    if len(description) > MAX_DESCRIPTION_LENGTH:
+        return (
+            f"Description must be {MAX_DESCRIPTION_LENGTH} characters or fewer.",
+            None,
+        )
+
+    return None, {
+        "amount": amount,
+        "category": category,
+        "date": expense_date.isoformat(),
+        "description": description or None,
+    }
+
+
+@app.route("/expenses/add", methods=["GET", "POST"])
 def add_expense():
-    return "Add expense — coming in Step 7"
+    if g.user is None:
+        return redirect(url_for("login"))
+
+    if request.method == "GET":
+        return render_template(
+            "add_expense.html",
+            categories=CATEGORIES,
+            max_description_length=MAX_DESCRIPTION_LENGTH,
+            values={"date": date.today().isoformat()},
+        )
+
+    error, cleaned = _validate_expense(request.form)
+    if error is not None:
+        values = {
+            key: request.form.get(key, "")
+            for key in ("amount", "category", "date", "description")
+        }
+        return render_template(
+            "add_expense.html",
+            categories=CATEGORIES,
+            max_description_length=MAX_DESCRIPTION_LENGTH,
+            error=error,
+            values=values,
+        ), 400
+
+    create_expense(
+        g.user["id"],
+        cleaned["amount"],
+        cleaned["category"],
+        cleaned["date"],
+        cleaned["description"],
+    )
+    return redirect(url_for("profile"))
 
 
 @app.route("/expenses/<int:id>/edit")

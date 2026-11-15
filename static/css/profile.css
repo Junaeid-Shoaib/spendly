@@ -371,3 +371,16 @@
     .filter-dates { width: 100%; }
     .filter-field { flex: 1 1 8rem; }
 }
+
+.profile-add-btn {
+    margin-left: auto;
+    align-self: center;
+}
+
+@media (max-width: 600px) {
+    .profile-add-btn {
+        margin-left: 0;
+        width: 100%;
+        text-align: center;
+    }
+}

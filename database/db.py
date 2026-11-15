@@ -91,6 +91,25 @@ def create_user(name, email, password):
         conn.close()
 
 
+def create_expense(user_id, amount, category, expense_date, description):
+    """Insert an expense for user_id and return its new id.
+
+    expense_date is an ISO string (YYYY-MM-DD); a blank description is stored
+    as NULL.
+    """
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, float(amount), category, expense_date, description or None),
+        )
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        conn.close()
+
+
 def _date_clause(start_date, end_date):
     """Return (sql_fragment, params) bounding expenses.date inclusively.
 
