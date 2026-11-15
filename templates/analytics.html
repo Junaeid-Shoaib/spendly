@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics — Spendly{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/analytics.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="analytics-section">
+    <article class="analytics-card" aria-labelledby="analytics-title">
+        <div class="spending-preview" aria-hidden="true">
+            <p class="preview-label">SPENDING OVERVIEW</p>
+            <p class="preview-period">This week</p>
+            <p class="preview-total">£1,284.50</p>
+            <div class="preview-change"><span>12% less spent</span></div>
+
+            <div class="chart-guide guide-1"></div>
+            <div class="chart-guide guide-2"></div>
+            <div class="chart-guide guide-3"></div>
+
+            <div class="chart-bars">
+                {% for day in ['M', 'T', 'W', 'T', 'F', 'S', 'S'] %}
+                <div class="chart-col">
+                    <div class="chart-bar bar-{{ loop.index }}"></div>
+                    <span class="chart-day">{{ day }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="analytics-description">
+            <span class="coming-soon-badge">Coming soon</span>
+            <h1 id="analytics-title" class="analytics-title">Advanced analytics</h1>
+            <p class="analytics-text">Powerful visual insights to help you understand your spending better.</p>
+        </div>
+    </article>
+</section>
+{% endblock %}
