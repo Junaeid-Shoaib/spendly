@@ -100,7 +100,7 @@ pytest -s
 | `GET /profile` | Implemented — renders `profile.html` with real expense data (stats, recent transactions, category breakdown); accepts optional `?start=&end=` (YYYY-MM-DD) date filters |
 | `GET/POST /expenses/add` | Implemented — renders `add_expense.html`; validates and saves via `create_expense()`, redirects to `/profile` |
 | `GET/POST /expenses/<id>/edit` | Implemented — renders `edit_expense.html` prefilled; validates via `_validate_expense()`, saves via `update_expense()`, redirects to `/profile`; 404 if the expense is missing or not owned |
-| `GET /expenses/<id>/delete` | Stub — Step 9 |
+| `GET/POST /expenses/<id>/delete` | Implemented — GET renders `delete_expense.html` confirmation (never deletes); POST deletes via `delete_expense()` (imported as `delete_expense_record`) and redirects to `/profile`; 404 if the expense is missing or not owned |
 
 **Do not implement a stub route unless the active task explicitly targets that step.**
 
@@ -113,6 +113,5 @@ pytest -s
 - **Never put DB logic in route functions** — it belongs in `database/db.py`
 - **Never install new packages** mid-feature without flagging it — keep `requirements.txt` in sync
 - **Never use JS frameworks** — the frontend is intentionally vanilla
-- **`database/db.py` helpers** — user helpers plus `create_expense()`, `get_expense_by_id()`, `update_expense()` (both scoped by `user_id`), `get_recent_expenses()` (rows include `id`), `get_expense_stats()` and `get_category_totals()` (the last three take optional `start_date`/`end_date`); there is no expense delete helper until Step 9
-- **FK enforcement is manual** — SQLite foreign keys are off by default; `get_db()` must run `PRAGMA foreign_keys = ON` on every connection
+- **`database/db.py` helpers** — user helpers plus `create_expense()`, `get_expense_by_id()`, `update_expense()`, `delete_expense()` (all three scoped by `user_id`), `get_recent_expenses()` (rows include `id`), `get_expense_stats()` and `get_category_totals()` (the last three take optional `start_date`/`end_date`)- **FK enforcement is manual** — SQLite foreign keys are off by default; `get_db()` must run `PRAGMA foreign_keys = ON` on every connection
 - The app runs on **port 5001**, not the Flask default 5000 — don't change this
