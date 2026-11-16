@@ -242,6 +242,23 @@
     font-variant-numeric: tabular-nums;
 }
 
+.tx-table .tx-actions {
+    text-align: right;
+}
+
+.tx-edit-link {
+    color: var(--accent-text);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.tx-edit-link:hover,
+.tx-edit-link:focus-visible {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
 /* Category badges */
 
 .badge {

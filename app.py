@@ -4,7 +4,7 @@ import sqlite3
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
-from flask import Flask, g, redirect, render_template, request, session, url_for
+from flask import Flask, abort, g, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
 from database.db import (  # noqa: F401
@@ -13,12 +13,14 @@ from database.db import (  # noqa: F401
     create_user,
     get_category_totals,
     get_db,
+    get_expense_by_id,
     get_expense_stats,
     get_recent_expenses,
     get_user_by_email,
     get_user_by_id,
     init_db,
     seed_db,
+    update_expense,
 )
 
 app = Flask(__name__)
@@ -272,6 +274,7 @@ def _build_transactions(user_id, start_date=None, end_date=None):
     """
     return [
         {
+            "id": expense["id"],
             "date": expense["date"],
             "description": (expense["description"] or "").strip() or "—",
             "category": expense["category"],
@@ -465,9 +468,55 @@ def add_expense():
     return redirect(url_for("profile"))
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    if g.user is None:
+        return redirect(url_for("login"))
+
+    expense = get_expense_by_id(id, g.user["id"])
+    if expense is None:
+        abort(404)
+
+    if request.method == "GET":
+        return render_template(
+            "edit_expense.html",
+            categories=CATEGORIES,
+            max_description_length=MAX_DESCRIPTION_LENGTH,
+            expense_id=id,
+            values={
+                "amount": f"{expense['amount']:.2f}",
+                "category": expense["category"],
+                "date": expense["date"],
+                "description": expense["description"] or "",
+            },
+        )
+
+    error, cleaned = _validate_expense(request.form)
+    if error is not None:
+        values = {
+            key: request.form.get(key, "")
+            for key in ("amount", "category", "date", "description")
+        }
+        return render_template(
+            "edit_expense.html",
+            categories=CATEGORIES,
+            max_description_length=MAX_DESCRIPTION_LENGTH,
+            expense_id=id,
+            error=error,
+            values=values,
+        ), 400
+
+    updated = update_expense(
+        id,
+        g.user["id"],
+        cleaned["amount"],
+        cleaned["category"],
+        cleaned["date"],
+        cleaned["description"],
+    )
+    if not updated:
+        abort(404)
+    return redirect(url_for("profile"))
 
 
 @app.route("/expenses/<int:id>/delete")

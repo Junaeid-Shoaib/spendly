@@ -298,9 +298,10 @@ class TestProfileIntegration:
 
 
 class TestOtherStubsUnchanged:
-    def test_edit_stub_still_reachable(self, client, user_id):
+    def test_edit_is_no_longer_a_stub(self, client, user_id):
+        # Step 8 implemented edit; an unknown id now 404s (see test_08).
         r = client.get("/expenses/1/edit")
-        assert r.status_code == 200
+        assert r.status_code == 404
         assert _expenses() == []
 
     def test_delete_stub_does_not_delete(self, client, user_id):
