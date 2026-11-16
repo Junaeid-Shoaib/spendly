@@ -310,14 +310,14 @@ class TestProfileIntegration:
         assert client.get(f"/expenses/{expense_id}/edit").status_code == 200
 
 
-class TestDeleteStubUnchanged:
-    def test_delete_stub_returns_stub_text(self, client, expense_id):
+class TestDeleteGetIsSafe:
+    # Step 9 replaced the stub; GET now renders a confirmation page.
+    def test_delete_get_renders_confirmation(self, client, expense_id):
         r = client.get(f"/expenses/{expense_id}/delete")
         assert r.status_code == 200
-        assert b"Delete expense" in r.data
-        assert b"Step 9" in r.data
+        assert b"Delete this expense?" in r.data
 
-    def test_delete_stub_does_not_delete(self, client, expense_id):
+    def test_delete_get_does_not_delete(self, client, expense_id):
         client.get(f"/expenses/{expense_id}/delete")
         assert len(_expenses()) == 1
 
