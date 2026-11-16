@@ -26,7 +26,8 @@ def test_get_recent_expenses_shape_and_order(temp_db, add_expense):
     rows = temp_db.get_recent_expenses(user_id)
 
     assert [r["description"] for r in rows] == ["second", "first", "old"]
-    assert rows[0] == {
+    assert isinstance(rows[0]["id"], int)
+    assert {k: v for k, v in rows[0].items() if k != "id"} == {
         "date": "2026-03-01",
         "description": "second",
         "category": "Transport",
@@ -64,7 +65,9 @@ def test_build_transactions_format(temp_db, app_module, add_expense):
     user_id = _user(temp_db)
     add_expense(user_id, 1299, "Shopping", "2026-04-02", "Laptop")
 
-    assert app_module._build_transactions(user_id) == [
+    rows = app_module._build_transactions(user_id)
+    assert isinstance(rows[0]["id"], int)
+    assert [{k: v for k, v in r.items() if k != "id"} for r in rows] == [
         {
             "date": "2026-04-02",
             "description": "Laptop",

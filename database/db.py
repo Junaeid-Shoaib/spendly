@@ -110,6 +110,56 @@ def create_expense(user_id, amount, category, expense_date, description):
         conn.close()
 
 
+def get_expense_by_id(expense_id, user_id):
+    """Return the expense as a dict, or None if missing or not owned by user_id."""
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT id, amount, category, date, description FROM expenses "
+            "WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        return None
+    return {
+        "id": row["id"],
+        "amount": float(row["amount"]),
+        "category": row["category"],
+        "date": row["date"],
+        "description": row["description"],
+    }
+
+
+def update_expense(
+    expense_id, user_id, amount, category, expense_date, description
+):
+    """Update an expense owned by user_id; return True if a row was changed.
+
+    expense_date is an ISO string (YYYY-MM-DD); a blank description is stored
+    as NULL.
+    """
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            "UPDATE expenses SET amount = ?, category = ?, date = ?, "
+            "description = ? WHERE id = ? AND user_id = ?",
+            (
+                float(amount),
+                category,
+                expense_date,
+                description or None,
+                expense_id,
+                user_id,
+            ),
+        )
+        conn.commit()
+        return cursor.rowcount == 1
+    finally:
+        conn.close()
+
+
 def _date_clause(start_date, end_date):
     """Return (sql_fragment, params) bounding expenses.date inclusively.
 
@@ -129,7 +179,7 @@ def _date_clause(start_date, end_date):
 def get_recent_expenses(user_id, limit=5, start_date=None, end_date=None):
     """Return the user's newest expenses as a list of dicts.
 
-    Keys: date (raw ISO str), description (str or None), category, amount (float).
+    Keys: id, date (raw ISO str), description (str or None), category, amount (float).
     Ordered by date DESC, id DESC. start_date/end_date (ISO str) bound the
     range inclusively; either may be None.
     """
@@ -137,7 +187,7 @@ def get_recent_expenses(user_id, limit=5, start_date=None, end_date=None):
     conn = get_db()
     try:
         rows = conn.execute(
-            "SELECT date, description, category, amount FROM expenses "
+            "SELECT id, date, description, category, amount FROM expenses "
             "WHERE user_id = ?" + clause + " ORDER BY date DESC, id DESC LIMIT ?",
             (user_id, *extra, limit),
         ).fetchall()
@@ -145,6 +195,7 @@ def get_recent_expenses(user_id, limit=5, start_date=None, end_date=None):
         conn.close()
     return [
         {
+            "id": row["id"],
             "date": row["date"],
             "description": row["description"],
             "category": row["category"],
